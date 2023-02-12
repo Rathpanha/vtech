@@ -1,4 +1,4 @@
-export interface TodoList {
+export type TodoList = {
   id: string
   todo: string
   isCompleted: boolean

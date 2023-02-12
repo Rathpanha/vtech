@@ -38,10 +38,10 @@ export default function Home() {
       setTodoList(todoList);
     })
   }, []);
-
-  const addRecord = (todo: string) => {
+  
+  const addRecord = async (todo: string) => {
     setLoadingText("Adding todo list...");
-    fetch("/api/todo", {
+    await fetch("/api/todo", {
       method: "POST",
       headers: {
         Accept: 'application.json',
@@ -54,6 +54,9 @@ export default function Home() {
       .then((res) => res.json())
       .then((res) => {
         setLoadingText("");
+        if(!res.success) {
+          alert(res.message);
+        }
       });
   }
 
@@ -66,9 +69,10 @@ export default function Home() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main>
+      <main style={{ padding: "1rem" }}>
         <h1>Todo List</h1>
         <input 
+          placeholder="Todo"
           autoComplete="off"
           onKeyDown={(e) => {
             if(e.key === "Enter") {
@@ -78,13 +82,31 @@ export default function Home() {
         />
         <p>{loadingText}</p>
 
-        <ul>
-          {
-            todoList.map(list => {
-              return (<li key={list.id}>{list.todo}</li>);
-            })
-          }
-        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Todo</th>
+              <th>Is Completed</th>
+              <th>Created At</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {
+              todoList.map(list => {
+                return (
+                  <tr key={list.id}>
+                    <td>{list.id}</td>
+                    <td>{list.todo}</td>
+                    <td>{list.isCompleted ? "Yes" : "No"}</td>
+                    <td>{new Date(list.createdAt).toLocaleDateString()} {new Date(list.createdAt).toLocaleTimeString()}</td>
+                  </tr>
+                );
+              })
+            }
+          </tbody>
+        </table>
       </main>
     </>
   );
