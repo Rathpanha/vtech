@@ -11,7 +11,7 @@ export default async function handler(
     const { success, message } = await validateAddingRecord(req.body.todo);
 
     if(success) {
-      await fetch(`${firebaseConfig.databaseURL}/todolist.json`, {
+      const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json`, {
         method: "POST",
         headers: {
           Accept: 'application.json',
@@ -23,29 +23,31 @@ export default async function handler(
           isCompleted: false,
           createdAt: Date.now(),
         })
-      })
-        .then(() => {
-          res.status(200).json({ success: true, message: "Success!" });
-        }).catch(e => {
-          res.status(500).json({ success: false, message: "Error while performing action!" });
-        });
+      });
+
+      if(response.ok) {
+        res.status(200).json({ success: true, message: "Success!" });
+      } else {
+        res.status(500).json({ success: false, message: "Error while adding record!" });
+      }
     } else {
       res.status(400).json({ success, message });
     }
   } else if(req.method === "GET") {
     const todoList: TodoList[] = [];
 
-    await fetch(`${firebaseConfig.databaseURL}/todolist.json`)
-      .then(res => res.json())
-      .then(data => {
-        for(const key in data) {
-          todoList.push(data[key]);
-        }
+    const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json`);
+  
+    if(!response.ok) {
+      res.status(500).json({ success: false, message: "Error while retrieving record!" });
+    }
 
-        res.status(200).json(todoList);
-      }).catch(e => {
-        res.status(500).json({ success: false, message: "Error while fetching data!" });
-      });
+    const data = await response.json();
+    for(const key in data) {
+      todoList.push(data[key]);
+    }
+
+    res.status(200).json(todoList);
   }
 }
 
@@ -56,20 +58,21 @@ const validateAddingRecord = async (todo: string) => {
   // Validate empty
   if(!todo) {
     success = false;
-    message = "Todo can not be empty!";
+    message = "Record can not be empty!";
   } else {
     // Validate duplicate record
-    await fetch(`${firebaseConfig.databaseURL}/todolist.json?orderBy="todo"&equalTo="${todo}"`)
-    .then(res => res.json())
-    .then(data => {
-      if(JSON.stringify(data) !== "{}") {
-        success = false;
-        message = "Todo record is duplicated!"
-      }
-    }).catch(e => {
+    const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json?orderBy="todo"&equalTo="${todo}"`);
+
+    if(!response.ok) {
       success = false;
-      message = "Error while validating data!";
-    });
+      message = "Error while validating record!";
+    }
+
+    const data = await response.json();
+    if(JSON.stringify(data) !== "{}") {
+      success = false;
+      message = "Record is duplicated!"
+    }
   }
 
   return { success, message };

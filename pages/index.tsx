@@ -39,9 +39,10 @@ export default function Home() {
     })
   }, []);
   
-  const addRecord = async (todo: string) => {
+  const addRecord = (todo: string) => {
     setLoadingText("Adding todo list...");
-    await fetch("/api/todo", {
+
+    fetch(`/api/todo`, {
       method: "POST",
       headers: {
         Accept: 'application.json',
@@ -50,6 +51,25 @@ export default function Home() {
       body: JSON.stringify({
         todo
       })
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        setLoadingText("");
+        if(!res.success) {
+          alert(res.message);
+        }
+      });
+  }
+
+  const deleteRecord = (id: string) => {
+    setLoadingText("Deleting todo list...");
+
+    fetch(`/api/todo/${id}`, {
+      method: "DELETE",
+      headers: {
+        Accept: 'application.json',
+        'Content-Type': 'application/json'
+      }
     })
       .then((res) => res.json())
       .then((res) => {
@@ -82,31 +102,22 @@ export default function Home() {
         />
         <p>{loadingText}</p>
 
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Todo</th>
-              <th>Is Completed</th>
-              <th>Created At</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
+        <div style={{ padding: "1rem" }}>
+          <ul>
             {
               todoList.map(list => {
                 return (
-                  <tr key={list.id}>
-                    <td>{list.id}</td>
-                    <td>{list.todo}</td>
-                    <td>{list.isCompleted ? "Yes" : "No"}</td>
-                    <td>{new Date(list.createdAt).toLocaleDateString()} {new Date(list.createdAt).toLocaleTimeString()}</td>
-                  </tr>
+                  <li key={list.id} style={{ padding: "0.5rem 0"}}>
+                    {list.todo + " "} 
+                    <button onClick={() => {
+                      deleteRecord(list.id);
+                    }}>Remove</button>
+                  </li>
                 );
               })
             }
-          </tbody>
-        </table>
+          </ul>
+        </div>
       </main>
     </>
   );

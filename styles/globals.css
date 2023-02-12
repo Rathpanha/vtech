@@ -73,3 +73,11 @@ th, td {
 ul {
   margin: 0 1rem;
 }
+
+ul li button {
+  display: none;
+}
+
+ul li:hover button {
+  display: inline-block;
+}
