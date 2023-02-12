@@ -3,15 +3,19 @@ import { TodoList } from '@/types/TodoList';
 import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import Head from 'next/head';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const todoListRef = ref(db, "todolist");
 
 export default function Home() {
-  const [todoList, setTodoList] = useState<TodoList[]>([]);
-  const [loadingText, setLoadingText] = useState("");
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [ todoList, setTodoList ] = useState<TodoList[]>([]);
+  const [ action, setAction ] = useState<"add" | "edit">("add");
+  const [ recordEdit, setRecordEdit ] = useState<TodoList | null>(null);
+  const [ inputText, setInputText ] = useState("");
+  const [ loadingText, setLoadingText ] = useState("");
 
   useEffect(() => {
     setLoadingText("Loading todo list...");
@@ -55,7 +59,35 @@ export default function Home() {
       .then((res) => res.json())
       .then((res) => {
         setLoadingText("");
-        if(!res.success) {
+        if(res.success) {
+          setInputText("");
+        } else {
+          alert(res.message);
+        }
+      });
+  }
+
+  const editRecord = (todoList: TodoList) => {
+    setLoadingText("Editing todo list...");
+
+    fetch(`/api/todo/${todoList.id}`, {
+      method: "PUT",
+      headers: {
+        Accept: 'application.json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        todoList
+      })
+    })
+      .then((res) => res.json())
+      .then((res) => {
+        setLoadingText("");
+        if(res.success) {
+          setAction("add");
+          setRecordEdit(null);
+          setInputText("");
+        } else {
           alert(res.message);
         }
       });
@@ -96,8 +128,23 @@ export default function Home() {
           autoComplete="off"
           onKeyDown={(e) => {
             if(e.key === "Enter") {
-              addRecord(e.currentTarget.value);
+              if(action === "add") {
+                addRecord(e.currentTarget.value);
+              } else if(action === "edit") {
+                if(recordEdit) {
+                  editRecord({
+                    id: recordEdit.id,
+                    todo: e.currentTarget.value,
+                    isCompleted: recordEdit.isCompleted,
+                    createdAt: recordEdit.createdAt
+                  });
+                }
+              }
             }
+          }}
+          value={inputText}
+          onChange={(e) => {
+            setInputText(e.currentTarget.value);
           }}
         />
         <p>{loadingText}</p>
@@ -108,10 +155,16 @@ export default function Home() {
               todoList.map(list => {
                 return (
                   <li key={list.id} style={{ padding: "0.5rem 0"}}>
-                    {list.todo + " "} 
-                    <button onClick={() => {
+                    {list.todo} 
+                    <button style={{ margin: "0.25rem" }} onClick={() => {
                       deleteRecord(list.id);
                     }}>Remove</button>
+
+                    <button style={{ margin: "0.25rem" }} onClick={() => {
+                      setAction("edit");
+                      setRecordEdit(list);
+                      setInputText(list.todo);
+                    }}>Edit</button>
                   </li>
                 );
               })
