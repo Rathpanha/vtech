@@ -1,6 +1,5 @@
 import { firebaseConfig } from "@/functions/env";
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { v4 as uuidv4 } from 'uuid';
 import { TodoList } from "./../../../types/TodoList";
 
 export default async function handler(
@@ -8,7 +7,7 @@ export default async function handler(
   res: NextApiResponse<TodoList[] | { success: boolean, message: string }>
 ) {
   if(req.method === "POST") {
-    const { success, message } = await validateAddingRecord(req.body.todo);
+    const { success, message } = await validateAddingRecord(req.body);
 
     if(success) {
       const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json`, {
@@ -17,12 +16,7 @@ export default async function handler(
           Accept: 'application.json',
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          id: uuidv4(),
-          todo: req.body.todo,
-          isCompleted: false,
-          createdAt: Date.now(),
-        })
+        body: JSON.stringify(req.body)
       });
 
       if(response.ok) {
@@ -51,17 +45,17 @@ export default async function handler(
   }
 }
 
-const validateAddingRecord = async (todo: string) => {
+const validateAddingRecord = async (todoList: TodoList) => {
   let success = true;
   let message = "";
 
   // Validate empty
-  if(!todo) {
+  if(!todoList.todo) {
     success = false;
     message = "Record can not be empty!";
   } else {
     // Validate duplicate record
-    const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json?orderBy="todo"&equalTo="${todo}"`);
+    const response = await fetch(`${firebaseConfig.databaseURL}/todolist.json?orderBy="todo"&equalTo="${todoList.todo}"`);
 
     if(!response.ok) {
       success = false;

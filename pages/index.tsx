@@ -4,6 +4,7 @@ import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import Head from 'next/head';
 import { useEffect, useRef, useState } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
@@ -53,7 +54,10 @@ export default function Home() {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        todo
+        id: uuidv4(),
+        todo,
+        isCompleted: false,
+        createdAt: Date.now()
       })
     })
       .then((res) => res.json())
@@ -76,9 +80,7 @@ export default function Home() {
         Accept: 'application.json',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-        todoList
-      })
+      body: JSON.stringify(todoList)
     })
       .then((res) => res.json())
       .then((res) => {
@@ -154,7 +156,7 @@ export default function Home() {
             {
               todoList.map(list => {
                 const todoText = list.isCompleted ? <s>{list.todo}</s> : list.todo;
-                
+
                 return (
                   <li key={list.id} style={{ padding: "0.5rem 0"}}>
                     {todoText} 

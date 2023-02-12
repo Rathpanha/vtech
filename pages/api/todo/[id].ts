@@ -9,7 +9,7 @@ export default async function handler(
   const { id } = req.query;
 
   if(req.method === "PUT") {
-    const { success, message } = await validateEditingRecord(req.body.todoList);
+    const { success, message } = await validateEditingRecord(req.body);
     
     if(success) {
       // Retrieving record to get the value of the key first
@@ -18,7 +18,7 @@ export default async function handler(
 
       if(success) {
         // Editing record by key
-        const { success, message } = await editingRecord(key, req.body.todoList);
+        const { success, message } = await editingRecord(key, req.body);
 
         if(success) {
           res.status(200).json({ success, message });
