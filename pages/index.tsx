@@ -3,7 +3,7 @@ import { TodoList } from '@/types/TodoList';
 import { initializeApp } from "firebase/app";
 import { getDatabase, onValue, ref } from "firebase/database";
 import Head from 'next/head';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 const app = initializeApp(firebaseConfig);
@@ -11,8 +11,8 @@ const db = getDatabase(app);
 const todoListRef = ref(db, "todolist");
 
 export default function Home() {
-  const inputRef = useRef<HTMLInputElement>(null);
   const [ todoList, setTodoList ] = useState<TodoList[]>([]);
+  const [ todoListFilter, setTodoListFilter ] = useState<TodoList[]>([]);
   const [ action, setAction ] = useState<"add" | "edit">("add");
   const [ recordEdit, setRecordEdit ] = useState<TodoList | null>(null);
   const [ inputText, setInputText ] = useState("");
@@ -30,9 +30,12 @@ export default function Home() {
       .then((res) => res.json())
       .then((todoList: TodoList[]) => {
         setTodoList(todoList);
+        setTodoListFilter(todoList);
         setLoadingText("");
       })
+  }, []);
 
+  useEffect(() => {
     // Listen for realtime update on firebase database
     onValue(todoListRef, (snapshot) => {
       const todoList: TodoList[] = [];
@@ -41,8 +44,12 @@ export default function Home() {
       });
   
       setTodoList(todoList);
+      // Only listen when current client is in adding record action
+      if(action === "add") {
+        setTodoListFilter(todoList.filter(list => list.todo.includes(inputText)))
+      }
     })
-  }, []);
+  }, [ inputText, action ]);
   
   const addRecord = (todo: string) => {
     setLoadingText("Adding todo list...");
@@ -114,6 +121,14 @@ export default function Home() {
       });
   }
 
+  const onSearch = (searchText: string) => {
+    // Only filter when user adding todo
+    if(action === "add") {
+      const results = todoList.filter(list => list.todo.includes(searchText));
+      setTodoListFilter(results);
+    }
+  }
+
   return (
     <>
       <Head>
@@ -147,14 +162,17 @@ export default function Home() {
           value={inputText}
           onChange={(e) => {
             setInputText(e.currentTarget.value);
+            onSearch(e.currentTarget.value);
           }}
         />
-        <p>{loadingText}</p>
+        <span>{loadingText}</span>
 
         <div style={{ padding: "1rem" }}>
+          <p>{todoListFilter.length === 0 ? "No result. Create a new one instead!": ""}</p>
+
           <ul>
             {
-              todoList.map(list => {
+              todoListFilter.map(list => {
                 const todoText = list.isCompleted ? <s>{list.todo}</s> : list.todo;
 
                 return (
