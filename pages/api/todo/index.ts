@@ -60,12 +60,12 @@ const validateAddingRecord = async (todoList: TodoList) => {
     if(!response.ok) {
       success = false;
       message = "Error while validating record!";
-    }
-
-    const data = await response.json();
-    if(JSON.stringify(data) !== "{}") {
-      success = false;
-      message = "Record is duplicated!"
+    } else {
+      const data = await response.json();
+      if(JSON.stringify(data) !== "{}") {
+        success = false;
+        message = "Record is duplicated!"
+      }
     }
   }
 
