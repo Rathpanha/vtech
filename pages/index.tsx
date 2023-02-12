@@ -153,9 +153,11 @@ export default function Home() {
           <ul>
             {
               todoList.map(list => {
+                const todoText = list.isCompleted ? <s>{list.todo}</s> : list.todo;
+                
                 return (
                   <li key={list.id} style={{ padding: "0.5rem 0"}}>
-                    {list.todo} 
+                    {todoText} 
                     <button style={{ margin: "0.25rem" }} onClick={() => {
                       deleteRecord(list.id);
                     }}>Remove</button>
@@ -165,6 +167,15 @@ export default function Home() {
                       setRecordEdit(list);
                       setInputText(list.todo);
                     }}>Edit</button>
+
+                    <button style={{ margin: "0.25rem" }} onClick={() => {
+                      editRecord({
+                        id: list.id,
+                        todo: list.todo,
+                        isCompleted: !list.isCompleted,
+                        createdAt: list.createdAt
+                      })
+                    }}>Mark as {list.isCompleted ? "Incomplete" : "Complete"}</button>
                   </li>
                 );
               })
